@@ -33,16 +33,15 @@ model = dict(
     ),
     bbox_head=dict(
         type='HeadNet',
-        num_classes=90,
+        num_classes=80,
         in_channels=channels,
         box_class_repeats=3,
         num_levels=num_levels,
         act_fn=act_cfg,
         anchor_generator=dict(
             type='AnchorGenerator',
-            octave_base_scale=4,
-            scales_per_octave=3,
-            ratios=[0.5, 1.0, 2.0],
+            scales=[4, ] * 3,
+            ratios=[0.7, 1.0, 1.4],
             strides=[8, 16, 32, 64, 128]),
         bbox_coder=dict(
             type='DeltaXYWHBBoxCoder',
@@ -62,7 +61,7 @@ train_cfg = dict(
     assigner=dict(
         type='MaxIoUAssigner',
         pos_iou_thr=0.5,
-        neg_iou_thr=0.5,
+        neg_iou_thr=1.0,
         min_pos_iou=0,
         ignore_iof_thr=-1),
     allowed_border=-1,
@@ -109,7 +108,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=20,
+    samples_per_gpu=12,
     workers_per_gpu=0,
     train=dict(
         type='RepeatDataset',

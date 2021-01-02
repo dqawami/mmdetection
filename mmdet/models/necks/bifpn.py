@@ -8,10 +8,7 @@ from mmcv.cnn import xavier_init
 from mmdet.core import auto_fp16
 
 from ..builder import NECKS
-from ..utils import ActLayer, SeparableConv2d
-
-from mmcv.cnn import normal_init, ConvModule
-# from mmcv.cnn.bricks import DepthwiseSeparableConvModule
+from ..utils import ActLayer, SeparableConv2d, ConvBn
 
 
 class BiFPNNode(nn.Module):
@@ -38,8 +35,8 @@ class BiFPNNode(nn.Module):
             reduction_ratio = target_reduction / input_reduction
 
             if used_input != output_channel:
-                conv = ConvModule(used_input, output_channel, kernel_size=1,
-                                  norm_cfg=dict(type='BN'), act_cfg=None)
+                conv = ConvBn(used_input, output_channel, kernel_size=1,
+                              act_cfg=None)
                 offset_nodes.add_module("conv", conv)
 
             if reduction_ratio > 1:
@@ -59,12 +56,12 @@ class BiFPNNode(nn.Module):
             self.edge_weights = nn.Parameter(torch.ones(len(input_offsets)), requires_grad=True)
 
         conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3,
-                           act_cfg=None, norm_cfg=dict(type='BN'))
+                           act_cfg=None, bias=False, apply_bn=False)
 
         if separable_conv:
             self.fusion_convs = SeparableConv2d(**conv_kwargs)
         else:
-            self.fusion_convs = ConvModule(padding=1, **conv_kwargs)
+            self.fusion_convs = ConvBn(padding=1, **conv_kwargs)
 
     def forward(self, inputs):
         # Create node inputs
@@ -199,8 +196,8 @@ class BiFPN(nn.Module):
             if input_channels != out_channels:
                 self.extra_convs.append(
                     nn.Sequential(
-                        ConvModule(input_channels, out_channels, kernel_size=1,
-                                   norm_cfg=dict(type='BN'), act_cfg=None),
+                        ConvBn(input_channels, out_channels, kernel_size=1,
+                               bias=False, act_cfg=None),
                         nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
                     )
                 )

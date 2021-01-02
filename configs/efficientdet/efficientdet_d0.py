@@ -40,7 +40,8 @@ model = dict(
         act_fn=act_cfg,
         anchor_generator=dict(
             type='AnchorGenerator',
-            scales=[4, ] * 3,
+            octave_base_scale=4,
+            scales_per_octave=3,
             ratios=[0.7, 1.0, 1.4],
             strides=[8, 16, 32, 64, 128]),
         bbox_coder=dict(
@@ -61,7 +62,7 @@ train_cfg = dict(
     assigner=dict(
         type='MaxIoUAssigner',
         pos_iou_thr=0.5,
-        neg_iou_thr=1.0,
+        neg_iou_thr=0.5,
         min_pos_iou=0,
         ignore_iof_thr=-1),
     allowed_border=-1,
@@ -108,7 +109,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=12,
+    samples_per_gpu=20,
     workers_per_gpu=0,
     train=dict(
         type='RepeatDataset',

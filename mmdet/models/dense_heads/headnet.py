@@ -36,7 +36,7 @@ class HeadLayer(nn.Module):
 
             bn_levels = []
             for _ in range(num_levels):
-                bn = nn.BatchNorm2d(in_channels)
+                bn = nn.SyncBatchNorm(in_channels, eps=1e-3, momentum=0.01)
                 bn_levels.append(bn)
             self.bn_rep.append(nn.ModuleList(bn_levels))
 

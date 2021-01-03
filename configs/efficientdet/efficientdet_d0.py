@@ -42,7 +42,7 @@ model = dict(
             type='AnchorGenerator',
             octave_base_scale=4,
             scales_per_octave=3,
-            ratios=[0.7, 1.0, 1.4],
+            ratios=[0.5, 1.0, 2.0],
             strides=[8, 16, 32, 64, 128]),
         bbox_coder=dict(
             type='DeltaXYWHBBoxCoder',
@@ -72,7 +72,7 @@ test_cfg = dict(
     nms_pre=1000,
     min_bbox_size=0,
     score_thr=0.05,
-    nms=dict(type='nms', iou_thr=0.5),
+    nms=dict(type='soft_nms', iou_thr=0.5),
     max_per_img=100)
 # model training and testing settings
 # dataset settings
@@ -134,7 +134,7 @@ data = dict(
         test_mode=True,
         pipeline=test_pipeline))
 # optimizer
-optimizer = dict(type='SGD', lr=0.08, momentum=0.9, weight_decay=0.00004)
+optimizer = dict(type='SGD', lr=0.16, momentum=0.9, weight_decay=0.00004)
 optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
 # learning policy
 lr_config = dict(

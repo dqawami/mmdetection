@@ -109,7 +109,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=20,
+    samples_per_gpu=18,
     workers_per_gpu=0,
     train=dict(
         type='RepeatDataset',
@@ -134,7 +134,7 @@ data = dict(
         test_mode=True,
         pipeline=test_pipeline))
 # optimizer
-optimizer = dict(type='SGD', lr=0.16, momentum=0.9, weight_decay=0.00004)
+optimizer = dict(type='SGD', lr=0.12, momentum=0.9, weight_decay=0.00004)
 optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
 custom_hooks = [
     dict(type='EMA', momentum=0.0001)

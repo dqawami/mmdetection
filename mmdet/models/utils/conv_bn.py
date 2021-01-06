@@ -12,7 +12,7 @@ class ConvBn(nn.Module):
         self.point_wise = self.point_wise = ConvModule(in_channels, out_channels, kernel_size,
                                                        **kwargs)
         if apply_bn:
-            self.bn = nn.SyncBatchNorm(out_channels, eps=1e-3, momentum=0.01)
+            self.bn = nn.BatchNorm2d(out_channels, eps=1e-3, momentum=0.01)
 
     def forward(self, x):
         out = self.point_wise(x)

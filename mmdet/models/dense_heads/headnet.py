@@ -1,7 +1,7 @@
 # Based off of github.com/rwightman/efficientdet-pytorch
 
+import torch
 import torch.nn as nn
-import math
 
 from ..builder import HEADS
 from .anchor_head import AnchorHead
@@ -15,7 +15,8 @@ class HeadLayer(nn.Module):
                  aspect_len, act_fn="silu", separable_conv=True, num_scales=3):
         super(HeadLayer, self).__init__()
 
-        num_anchors = aspect_len * num_scales
+        self.num_anchors = aspect_len * num_scales
+        self.num_classes = num_classes
 
         self.box_class_repeats = box_class_repeats
         self.num_levels = num_levels
@@ -25,7 +26,7 @@ class HeadLayer(nn.Module):
         self.bn_rep = nn.ModuleList()
 
         conv_kwargs = dict(in_channels=in_channels, out_channels=in_channels,
-                           kernel_size=3, bias=False, act_cfg=None, apply_bn=False)
+                           kernel_size=3, bias=False)
 
         for _ in range(box_class_repeats):
             if separable_conv:
@@ -40,8 +41,8 @@ class HeadLayer(nn.Module):
                 bn_levels.append(bn)
             self.bn_rep.append(nn.ModuleList(bn_levels))
 
-        predict_kwargs = dict(in_channels=in_channels, out_channels=num_classes * num_anchors,
-                              kernel_size=3, bias=True, act_cfg=None, apply_bn=False)
+        predict_kwargs = dict(in_channels=in_channels, out_channels=num_classes * self.num_anchors,
+                              kernel_size=3, bias=True)
 
         if separable_conv:
             self.predict = SeparableConv2d(**predict_kwargs)
@@ -56,7 +57,10 @@ class HeadLayer(nn.Module):
                 feat_level = self.conv_rep[i](feat_level)
                 feat_level = self.bn_rep[i][level](feat_level)
                 feat_level = self.act_layer(feat_level)
-            outputs.append(self.predict(feat_level))
+
+            feat_level = self.predict(feat_level)
+
+            outputs.append(feat_level)
         return outputs
 
 

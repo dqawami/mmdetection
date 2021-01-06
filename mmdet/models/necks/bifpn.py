@@ -8,8 +8,7 @@ from mmcv.cnn import xavier_init
 from mmdet.core import auto_fp16
 
 from ..builder import NECKS
-from ..utils import ActLayer, SeparableConv2d, ConvBn
-
+from ..utils import ActLayer, SeparableConv2d, ConvBn, StaticSamePadding
 
 class BiFPNNode(nn.Module):
     def __init__(self, input_channels, output_channel, num_backbone_features,
@@ -35,13 +34,12 @@ class BiFPNNode(nn.Module):
             reduction_ratio = target_reduction / input_reduction
 
             if used_input != output_channel:
-                conv = ConvBn(used_input, output_channel, kernel_size=1,
-                              act_cfg=None)
+                conv = ConvBn(used_input, output_channel, kernel_size=1)
                 offset_nodes.add_module("conv", conv)
 
             if reduction_ratio > 1:
                 stride_size = int(reduction_ratio)
-                offset_nodes.add_module("max_pool", nn.MaxPool2d(
+                offset_nodes.add_module("max_pool", StaticSamePadding(nn.MaxPool2d,
                     kernel_size=stride_size + 1, stride=stride_size, padding=1
                 ))
 
@@ -56,7 +54,7 @@ class BiFPNNode(nn.Module):
             self.edge_weights = nn.Parameter(torch.ones(len(input_offsets)), requires_grad=True)
 
         conv_kwargs = dict(in_channels=output_channel, out_channels=output_channel, kernel_size=3,
-                           act_cfg=None, bias=False, apply_bn=False)
+                           bias=False)
 
         if separable_conv:
             self.fusion_convs = SeparableConv2d(**conv_kwargs)
@@ -196,13 +194,12 @@ class BiFPN(nn.Module):
             if input_channels != out_channels:
                 self.extra_convs.append(
                     nn.Sequential(
-                        ConvBn(input_channels, out_channels, kernel_size=1,
-                               bias=False, act_cfg=None),
-                        nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+                        ConvBn(input_channels, out_channels, kernel_size=1),
+                        StaticSamePadding(nn.MaxPool2d, kernel_size=3, stride=2, padding=1)
                     )
                 )
             else:
-                self.extra_convs.append(nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+                self.extra_convs.append(StaticSamePadding(nn.MaxPool2d, kernel_size=3, stride=2, padding=1))
             reduction.append(int(reduction[-1] * reduction_ratio))
 
         node_ids = {min_level + i: [i] for i in range(num_outs)}

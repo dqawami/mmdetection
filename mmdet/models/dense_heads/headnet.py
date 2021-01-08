@@ -5,9 +5,9 @@ import torch.nn as nn
 
 from ..builder import HEADS
 from .anchor_head import AnchorHead
-from mmcv.cnn import normal_init, xavier_init
+from mmcv.cnn import normal_init, xavier_init, ConvModule
 
-from ..utils import ActLayer, SeparableConv2d, ConvBn
+from ..utils import ActLayer, SeparableConv2d
 
 
 class HeadLayer(nn.Module):
@@ -26,28 +26,28 @@ class HeadLayer(nn.Module):
         self.bn_rep = nn.ModuleList()
 
         conv_kwargs = dict(in_channels=in_channels, out_channels=in_channels,
-                           kernel_size=3, bias=False)
+                           kernel_size=3, bias=False, act_cfg=None)
 
         for _ in range(box_class_repeats):
             if separable_conv:
                 conv = SeparableConv2d(**conv_kwargs)
             else:
-                conv = ConvBn(**conv_kwargs)
+                conv = ConvModule(**conv_kwargs)
             self.conv_rep.append(conv)
 
             bn_levels = []
             for _ in range(num_levels):
-                bn = nn.BatchNorm2d(in_channels, eps=1e-3, momentum=0.01)
+                bn = nn.BatchNorm2d(in_channels)
                 bn_levels.append(bn)
             self.bn_rep.append(nn.ModuleList(bn_levels))
 
         predict_kwargs = dict(in_channels=in_channels, out_channels=num_classes * self.num_anchors,
-                              kernel_size=3, bias=True)
+                              kernel_size=3, bias=True, act_cfg=None)
 
         if separable_conv:
             self.predict = SeparableConv2d(**predict_kwargs)
         else:
-            self.predict = ConvBn(**predict_kwargs)
+            self.predict = ConvModule(**predict_kwargs)
 
     def forward(self, feats):
         outputs = []

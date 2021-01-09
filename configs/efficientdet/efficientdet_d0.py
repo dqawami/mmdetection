@@ -85,7 +85,7 @@ train_pipeline = [
     dict(
         type='Resize',
         img_scale=(input_size, input_size),
-        ratio_range=(0.1, 2.0),
+        # ratio_range=(0.1, 2.0),
         keep_ratio=True),
     dict(type='RandomCrop', crop_size=(input_size, input_size)),
     dict(type='RandomFlip', flip_ratio=0.5),
@@ -109,7 +109,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=12,
+    samples_per_gpu=20,
     workers_per_gpu=0,
     train=dict(
         type='RepeatDataset',

@@ -6,7 +6,7 @@ channels = 64
 num_levels = 5
 act_cfg = 'silu'
 separable_conv = True
-num_epochs = 300
+num_epochs = 500
 delta = 0.1
 model = dict(
     type='RetinaNet',
@@ -134,7 +134,7 @@ data = dict(
         test_mode=True,
         pipeline=test_pipeline))
 # optimizer
-optimizer = dict(type='SGD', lr=0.12, momentum=0.9, weight_decay=0.00004)
+optimizer = dict(type='SGD', lr=0.08, momentum=0.9, weight_decay=0.00004)
 optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
 custom_hooks = [
     dict(type='EMA', momentum=0.0001)
@@ -146,7 +146,7 @@ lr_config = dict(
     min_lr=0.00001,
     min_lr_ratio=None,
     warmup='linear',
-    warmup_iters=5,
+    warmup_iters=1,
     warmup_ratio=0.0001,
     warmup_by_epoch=True
 )

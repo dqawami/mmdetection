@@ -35,7 +35,8 @@ model = dict(
         type='RetinaHead',
         num_classes=80,
         in_channels=channels,
-        stacked_convs=3,
+        # stacked_convs=3,
+        stacked_convs=4,
         feat_channels=channels,
         anchor_generator=dict(
             type='AnchorGenerator',
@@ -50,19 +51,20 @@ model = dict(
         loss_cls=dict(
             type='FocalLoss',
             use_sigmoid=True,
-            gamma=1.5,
+            # gamma=1.5,
+            gamma=2.0,
             alpha=0.25,
             loss_weight=1.0),
         # Replicates huber loss
-        loss_bbox=dict(type='SmoothL1Loss', beta=delta, loss_weight=delta)
-    ))
+        # loss_bbox=dict(type='SmoothL1Loss', beta=delta, loss_weight=delta)
+        loss_bbox=dict(type='L1Loss', loss_weight=1.0))
+)
 # training and testing settings
-cudnn_benchmark = True
 train_cfg = dict(
     assigner=dict(
         type='MaxIoUAssigner',
         pos_iou_thr=0.5,
-        neg_iou_thr=0.5,
+        neg_iou_thr=0.4,
         min_pos_iou=0,
         ignore_iof_thr=-1),
     allowed_border=-1,
@@ -74,6 +76,7 @@ test_cfg = dict(
     score_thr=0.05,
     nms=dict(type='nms', iou_thr=0.5),
     max_per_img=100)
+cudnn_benchmark = True
 # model training and testing settings
 # dataset settings
 dataset_type = 'CocoDataset'
@@ -90,7 +93,7 @@ train_pipeline = [
     dict(type='RandomCrop', crop_size=(input_size, input_size)),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
-    dict(type='Pad', size=(input_size, input_size)),
+    dict(type='Pad', size_divisor=32),
     dict(type='DefaultFormatBundle'),
     dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'])
 ]
@@ -101,16 +104,17 @@ test_pipeline = [
         img_scale=(input_size, input_size),
         flip=False,
         transforms=[
-            dict(type='Resize', keep_ratio=False),
-            dict(type='Normalize', **img_norm_cfg),
+            dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlip'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='Pad', size_divisor=32),
             dict(type='ImageToTensor', keys=['img']),
             dict(type='Collect', keys=['img']),
         ])
 ]
 data = dict(
-    samples_per_gpu=12,
-    workers_per_gpu=6,
+    samples_per_gpu=18,
+    workers_per_gpu=0,
     train=dict(
         type='RepeatDataset',
         times=1,
@@ -133,18 +137,17 @@ data = dict(
         img_prefix=data_root + 'val2017',
         test_mode=True,
         pipeline=test_pipeline))
+evaluation = dict(interval=1, metric='bbox')
 # optimizer
-optimizer = dict(type='SGD', lr=0.08, momentum=0.9, weight_decay=0.00004)
-optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
+optimizer = dict(type='SGD', lr=0.08, momentum=0.9, weight_decay=4e-5)
+optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
-    policy='CosineRestart',
-    periods=[num_epochs],
-    min_lr=0.00001,
-    min_lr_ratio=None,
+    policy='CosineAnealing',
+    min_lr=0,
     warmup='linear',
-    warmup_iters=5,
-    warmup_ratio=0.0001,
+    warmup_iters=1,
+    warmup_ratio=0.1,
     warmup_by_epoch=True
 )
 checkpoint_config = dict(interval=5)
@@ -154,12 +157,13 @@ log_config = dict(
     hooks=[
         dict(type='TextLoggerHook'),
     ])
+cutsom_hooks = [dict(type='EMAHook')]
 # yapf:enable
 # runtime settings
 total_epochs = num_epochs
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = 'outputs/retinanet_effd0_bifpn_1x_coco'
+work_dir = 'outputs/retinanet_effd0_fpn_1x_coco'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
